@@ -380,7 +380,7 @@ class Board extends Model {
 			$carbon = \Carbon\Carbon::now()->subHour()->minute(0)->second(0);
 		}
 		
-		static::chunk(100, function($boards) use ($stats, $carbon)
+		static::chunk(25, function($boards) use ($stats, $carbon)
 		{
 			foreach ($boards as $board)
 			{
@@ -641,6 +641,7 @@ class Board extends Model {
 				{
 					if ($setting->option_name === $option->option_name)
 					{
+						$setting->data_type   = $option->data_type;
 						$option->option_value = $setting->option_value;
 						break;
 					}
@@ -681,6 +682,20 @@ class Board extends Model {
 	public function getDisplayName()
 	{
 		return $this->title;
+	}
+	
+	/**
+	 * Returns flag board assets
+	 *
+	 * @return Collection  Of \App\BoardAsset
+	 */
+	public function getFlags()
+	{
+		$this->load('assets', 'assets.storage');
+		
+		return $this->assets
+			->where('asset_type', "board_flags")
+			->sortBy('asset_name');
 	}
 	
 	/**
@@ -952,6 +967,71 @@ class Board extends Model {
 		return url("/cp/board/{$this->board_uri}/staff/{$route}");
 	}
 	
+	/**
+	 * Returns a find->replace array for board wordfilters.
+	 *
+	 * @return array
+	 */
+	public function getWordfilters()
+	{
+		$filters = $this->getConfig('boardWordFilter', []);
+		$find    = [];
+		$replace = [];
+		
+		if (isset($filters['find']))
+		{
+			$find = (array) $filters['find'];
+		}
+		
+		if (isset($filters['replace']))
+		{
+			$replace = (array) $filters['replace'];
+		}
+		
+		$filters = array_combine($find, $replace);
+		
+		foreach ($filters as $fFind => $fReplace)
+		{
+			if ($fFind === "")
+			{
+				unset($filters[$fFind]);
+			}
+		}
+		
+		return $filters;
+	}
+	
+	/**
+	 * Returns if this board has a specific flag asset currently loaded.
+	 *
+	 * @param  int  $asset_id
+	 * @return bool
+	 */
+	public function hasFlag($asset_id)
+	{
+		if (!isset($this->assets))
+		{
+			return false;
+		}
+		
+		return !!$this->assets->where('asset_type', "board_flags")->where('board_asset_id', (int) $asset_id)->count();
+	}
+	
+	/**
+	 * Returns if this board has flag assets currently loaded.
+	 *
+	 * @return bool
+	 */
+	public function hasFlags()
+	{
+		if (!isset($this->assets))
+		{
+			return false;
+		}
+		
+		return !!$this->assets->where('asset_type', "board_flags")->count();
+	}
+	
 	public function hasStylesheet()
 	{
 		if (!$this->isWorksafe())
@@ -1093,6 +1173,7 @@ class Board extends Model {
 				->op()
 				->andAttachments()
 				->andCapcode()
+				->andCites()
 				->orderBy('stickied', 'desc')
 				->orderBy('bumped_last', 'desc')
 				->skip($postsPerPage * ( $page - 1 ))

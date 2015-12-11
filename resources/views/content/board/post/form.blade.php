@@ -19,6 +19,16 @@
 @endif
 	@if (!isset($post))
 	<ul class="post-menu">
+		<li class="menu-input menu-password">
+			{!! Form::password(
+				'password',
+				[
+					'id'          => "password",
+					'class'       => "field-control",
+					'maxlength'   => 255,
+					'placeholder' => trans('board.field.password'),
+			]) !!}
+		</li>
 		<li class="menu-icon menu-icon-minimize">
 			<span class="menu-icon-button"></span>
 			<span class="menu-icon-text">Minimize</span>
@@ -73,7 +83,18 @@
 		</div>
 		@endif
 		
-		<div class="field row-email">
+		@if ($board->hasFlags())
+		<div class="field row-submit row-double">
+			<select id="flag" class="field-control field-flag" name="flag_id">
+				<option value="" selected>@lang('board.field.flag')</option>
+				
+				@foreach ($board->getFlags() as $flag)
+					<option value="{!! $flag->board_asset_id !!}">{{{ $flag->asset_name }}}</option>
+				@endforeach
+			</select>
+		@else
+		<div class="field row-submit">
+		@endif
 			{!! Form::text(
 				'email',
 				old('email'),

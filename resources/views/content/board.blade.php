@@ -14,6 +14,7 @@
 		'showCatalog' => true,
 		'showIndex'   => !!$reply_to,
 		'showPages'   => false,
+		'header'      => true,
 	])
 	
 	<section class="index-threads">
@@ -27,7 +28,6 @@
 						@include('content.board.thread', [
 							'board'   => $board,
 							'thread'  => $thread,
-							'updater' => !!$reply_to,
 						])
 					</div>
 				</article>
@@ -45,5 +45,6 @@
 		'showCatalog' => true,
 		'showIndex'   => !!$reply_to,
 		'showPages'   => true,
+		'header'      => false,
 	])
 @stop

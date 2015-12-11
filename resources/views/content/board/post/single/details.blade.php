@@ -1,7 +1,19 @@
 <ul class="post-details">
+	@set('catalog', isset($catalog) && $catalog)
+	
 	<li class="post-detail post-actions">@include('content.board.post.single.actions')</li>
 	
-	<li class="post-detail post-subject">@if ($post->subject)<h3 class="post-detail-item subject ugc">{{ $post->subject }}</h3>@endif</li>
+	@if ($post->subject)
+	<li class="post-detail post-subject">
+		<h3 class="post-detail-item subject ugc">
+		@if (!$catalog)
+		{{ $post->subject }}
+		@else
+		<a href="{{ $post->getURL() }}" class="subject-link">{{ $post->subject }}</a>
+		@endif
+		</h3>
+	</li>
+	@endif
 	
 	<li class="post-detail post-author">
 		<strong class="post-detail-item author ugc">
@@ -18,13 +30,21 @@
 		@endif
 	</li>
 	
+	@if ($post->flag_id)
+		<li class="post-detail post-custom-flag" title="{{ $post->flag->getDisplayName() }}">{!! $post->flag->asHTML() !!}</li>
+	@endif
+	
 	@if ($board->getConfig('postsAuthorCountry', false) && $post->getCountryCode() && (!isset($catalog) || !$catalog))
 		<li class="post-detail post-country" title="{{ trans('country.' . $post->getCountryCode()) }}"><span class="flag flag-{{ $post->getCountryCode() }}"></span></li>
 	@endif
 	
-	<li class="post-detail post-postedon"><time class="post-detail-item postedon" title="{{ $post->created_at->diffForHumans() }}">{{ $post->created_at }}</time></li>
+	<li class="post-detail post-postedon">
+		<span class="post-detail-item postedon">
+			@include('widgets.time', [ 'carbon' => $post->created_at ])
+		</span>
+	</li>
 	
-	@if (!isset($catalog) || !$catalog)
+	@if (!$catalog)
 		@if ($board->getConfig('postsThreadId', false))
 		<li class="post-detail post-authorid" id="{{ $post->board_id}}">
 			<span class="post-detail-item authorid authorid-colorized" style="background-color: {{ $post->getAuthorIdBackgroundColor() }}; color: {{ $post->getAuthorIdForegroundColor() }};">{{ $post->author_id }}</span>
@@ -33,7 +53,7 @@
 		
 		<li class="post-detail post-id" id="reply-{{ $post->board_id}}">
 			<a href="{!! $post->url() !!}" class="post-no" data-board_id="{!! $post->board_id !!}" data-instant>@lang('board.post_number')</a>
-			<a href="{!! $post->urlReply() !!}" class="post-reply" data-board_id="{!! $post->board_id !!}" {{ (!isset($reply_to) || !$reply_to) ? "data-instant" : "" }}>{!! $post->board_id !!}</a>
+			<a href="{!! $post->urlReply() !!}" class="post-reply" data-board_id="{!! $post->board_id !!}" {{ !$reply_to ? "data-instant" : "" }}>{!! $post->board_id !!}</a>
 		</li>
 	@endif
 	
@@ -59,5 +79,33 @@
 	
 	<li class="post-detail detail-icon post-deleted" title="@lang('board.detail.deleted')"><i class="fa fa-remove"></i></li>
 	
-	<li class="post-detail detail-cites" data-no-instant>@include('content.board.post.single.cites')</li>
+	@if (!$catalog)
+		@if (!$reply_to && $post->isOP())
+		<li class="post-detail detail-open">
+			{{-- Mobile Last 50 Open --}}
+			<a class="thread-replies-open only-mobile" href="{{ $thread->getURL('l50')}}">
+				{{ Lang::choice(
+					'board.omitted.show.open',
+					50,
+					[
+						'count' => 50,
+					]
+				) }}
+			</a>
+			
+			{{-- Desktop Last 350 Open --}}
+			<a class="thread-replies-open no-mobile" href="{{ $thread->getURL('l350')}}">
+				{{ Lang::choice(
+					'board.omitted.show.open',
+					350,
+					[
+						'count' => 350,
+					]
+				) }}
+			</a>
+		</li>
+		@endif
+		
+		<li class="post-detail detail-cites" data-no-instant>@include('content.board.post.single.cites')</li>
+	@endif
 </ul>
